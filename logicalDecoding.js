@@ -11,6 +11,7 @@ const utils = require('./utils/common.js');
 
 var self = this;
 var LD_SLOT;
+var total = 0;
 
 LD_SLOT             = process.env.LD_SLOT ? process.env.LD_SLOT : 'reader_slot';
 process.env.PGHOST  = process.env.PGHOST ? process.env.PGHOST : '127.0.0.1';
@@ -18,8 +19,7 @@ process.env.PGUSER  = process.env.PGUSER ? process.env.PGUSER : 'postgres';
 process.env.PGPASSWORD = process.env.PGPASSWORD ? process.env.PGPASSWORD : '';
 process.env.PGDATABASE = process.env.PGDATABASE ? process.env.PGDATABASE : 'testdb1';
 
-const READCOUNT = 1000;
-
+const CHUNKSIZE = 1000;
 /*
  * readRow: To read set of replication records from given client, LD_SLOT
  *          and till the next row
@@ -44,7 +44,7 @@ var readRow = function (client, slot, next) {
   }
 };
 
-utils.printConfig(LD_SLOT, READCOUNT);
+utils.printConfig(LD_SLOT, CHUNKSIZE);
 
 const client = new Client();
 client.connect();
@@ -60,7 +60,9 @@ client.query(`SELECT location, xid FROM pg_logical_slot_peek_changes('${LD_SLOT}
       // console.log(r.location, r.xid, r.data)
     })
   }
-  var chunks = _.chunk(res.rows, READCOUNT);
+  total = res.rows.length;
+
+  var chunks = _.chunk(res.rows, CHUNKSIZE);
   var tasks = [];
   _.forEach(chunks, function (rows, idx) {
     var next = _.last(rows);
@@ -76,6 +78,7 @@ client.query(`SELECT location, xid FROM pg_logical_slot_peek_changes('${LD_SLOT}
     } else {
       //debug(results);
     }
+    console.log('Total records consumed = ', total);
     client.end()
   });
 });

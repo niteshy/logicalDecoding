@@ -1,0 +1,32 @@
+{
+  "name": "logical-decoding",
+  "version": "0.0.1",
+  "description": "\"Logical decoding poc for pg\" ",
+  "main": "index.js ",
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/niteshy/logicalDecoding.git"
+  },
+  "keywords": [
+    "logical-decoding",
+    "postgresql",
+    "postgres",
+    "pg"
+  ],
+  "author": "Nitesh Yadav",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/niteshy/logicalDecoding/issues"
+  },
+  "homepage": "https://github.com/niteshy/logicalDecoding#readme",
+  "dependencies": {
+    "async": "^2.5.0",
+    "debug": "^2.6.8",
+    "lodash": "^4.17.4",
+    "pg": "^6.4.1",
+    "util": "^0.10.3"
+  }
+}

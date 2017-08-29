@@ -3,7 +3,7 @@
 #USPGUSERER='postgres'
 #PGDATABASE='testdb1'
 #PGPASSWORD=''
-#NINSERT=20000
+#NINSERT=20
 
 function getCount {
   id=`PGPASSWORD=${PGPASSWORD} psql -U${PGUSER} -p${PGDATABASE} -d ${PGDATABASE} -h ${PGHOST} -p 5432 -t -w -c "$1"`;

@@ -6,6 +6,8 @@ const util = require('util');
 const async = require('async');
 const { Pool, Client } = require('pg');
 const debug = require('debug')('decoding');
+const QueryStream = require('pg-query-stream');
+
 
 const utils = require('./utils/common.js');
 
@@ -36,7 +38,7 @@ var readRow = function (client, slot, next) {
       if (res && res.rows) {
         _.forEach(res.rows, function (r) {
           //debug(r.location, r.xid, r.data)
-          console.log(r.location, r.xid, r.data)
+          //console.log(r.location, r.xid, r.data)
         })
       }
       return cb(null, res.rows);
@@ -49,26 +51,37 @@ utils.printConfig(LD_SLOT, CHUNKSIZE);
 const client = new Client();
 client.connect();
 
-client.query(`SELECT location, xid FROM pg_logical_slot_peek_changes('${LD_SLOT}', NULL, NULL, 'include-timestamp', 'on')`, (err, res) => {
+client.query(`SELECT location, xid FROM pg_logical_slot_peek_changes('${LD_SLOT}', NULL, NULL, 'include-timestamp', 'on')`, (err, result) => {
   if (err) {
     debug('decoding:query: error', err);
     console.error('decoding:query: error', err);
     return err;
   }
-  if (res.rows) {
-    _.forEach(res.rows, function (r) {
+  if (result.rows) {
+    _.forEach(result.rows, function (r) {
       // console.log(r.location, r.xid, r.data)
     })
   }
-  total = res.rows.length;
+  total = result.rows.length;
 
-  var chunks = _.chunk(res.rows, CHUNKSIZE);
   var tasks = [];
-  _.forEach(chunks, function (rows, idx) {
-    var next = _.last(rows);
-    debug(`${idx} rows -> `, next);
-    tasks.push(readRow(client, LD_SLOT, next))
-  });
+  //var chunks = _.chunk(res.rows, CHUNKSIZE);
+  //console.log('chunks -> ', chunks);
+  if (result.rows.length <= CHUNKSIZE) {
+    var next = _.last(result.rows);
+    tasks.push(readRow(client, LD_SLOT, next));
+  } else { // more than 1 page
+    for (var i = 0; i < result.rows.length; i += CHUNKSIZE) {
+      var next = _.nth(result.rows, i);
+      debug(` rows -> `, next);
+      tasks.push(readRow(client, LD_SLOT, next))
+    }
+  }
+//  _.forEach(chunks, function (rows, idx) {
+//    var next = _.last(rows);
+//    debug(`${idx} rows -> `, next);
+//    tasks.push(readRow(client, LD_SLOT, next))
+//  });
 
   //debug(util.inspect(tasks, { showHidden: false, depth: null }))
   async.series(tasks, function (err, results) {
